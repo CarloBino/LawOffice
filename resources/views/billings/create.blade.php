@@ -1,0 +1,25 @@
+<x-app-layout>
+    <x-slot name="header"><div><p class="text-sm font-bold uppercase text-[#9f7957]">Accounts and fees</p><h2 class="mt-2 text-3xl font-extrabold text-[#030203]">New Billing</h2></div></x-slot>
+    <div class="bg-[#eef0ec] py-8"><div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+        @if ($errors->any())<div class="mb-6 border border-red-200 bg-red-50 p-4 text-sm text-red-800">{{ $errors->first() }}</div>@endif
+        <form method="POST" action="{{ route('billings.store') }}" class="bg-white p-6 shadow-sm">
+            @csrf
+            <div class="grid gap-5 sm:grid-cols-2">
+                <div class="sm:col-span-2"><label class="mb-2 block text-sm font-bold uppercase text-[#554b45]">Case / Client</label><select name="case_id" required class="w-full border-[#c1c1bd] bg-white text-[#030203] focus:border-[#9f7957] focus:ring-[#9f7957]">@foreach($cases as $c)<option value="{{ $c->id }}" @selected(old('case_id', $selectedCaseId ?? null) == $c->id)>{{ $c->case_number }} - {{ $c->case_title }} @if($c->client) / {{ $c->client->full_name }} @endif</option>@endforeach</select></div>
+                <div><label class="mb-2 block text-sm font-bold uppercase text-[#554b45]">Acceptance Fee</label><input type="number" step="0.01" min="0" name="acceptance_fee" value="{{ old('acceptance_fee', 0) }}" class="w-full border-[#c1c1bd] bg-white text-[#030203] focus:border-[#9f7957] focus:ring-[#9f7957]"></div>
+                <div><label class="mb-2 block text-sm font-bold uppercase text-[#554b45]">Appearance Fee</label><input type="number" step="0.01" min="0" name="appearance_fee" value="{{ old('appearance_fee', 0) }}" class="w-full border-[#c1c1bd] bg-white text-[#030203] focus:border-[#9f7957] focus:ring-[#9f7957]"></div>
+                <div><label class="mb-2 block text-sm font-bold uppercase text-[#554b45]">Pleading Fee</label><input type="number" step="0.01" min="0" name="pleading_fee" value="{{ old('pleading_fee', 0) }}" class="w-full border-[#c1c1bd] bg-white text-[#030203] focus:border-[#9f7957] focus:ring-[#9f7957]"></div>
+                <div><label class="mb-2 block text-sm font-bold uppercase text-[#554b45]">Notarial Fee</label><input type="number" step="0.01" min="0" name="notarial_fee" value="{{ old('notarial_fee', 0) }}" class="w-full border-[#c1c1bd] bg-white text-[#030203] focus:border-[#9f7957] focus:ring-[#9f7957]"></div>
+                <div><label class="mb-2 block text-sm font-bold uppercase text-[#554b45]">Success Fee</label><input type="number" step="0.01" min="0" name="success_fee" value="{{ old('success_fee', 0) }}" class="w-full border-[#c1c1bd] bg-white text-[#030203] focus:border-[#9f7957] focus:ring-[#9f7957]"></div>
+                <div><label class="mb-2 block text-sm font-bold uppercase text-[#554b45]">Retainer Fee</label><input type="number" step="0.01" min="0" name="retainer_fee" value="{{ old('retainer_fee', 0) }}" class="w-full border-[#c1c1bd] bg-white text-[#030203] focus:border-[#9f7957] focus:ring-[#9f7957]"></div>
+                <div><label class="mb-2 block text-sm font-bold uppercase text-[#554b45]">Others</label><input type="number" step="0.01" min="0" name="other_fees" value="{{ old('other_fees', 0) }}" class="w-full border-[#c1c1bd] bg-white text-[#030203] focus:border-[#9f7957] focus:ring-[#9f7957]"></div>
+                <div class="sm:col-span-2 border-t border-[#e3e3df] pt-5"><p class="text-sm font-bold uppercase text-[#9f7957]">Initial payment received</p></div>
+                <div><label class="mb-2 block text-sm font-bold uppercase text-[#554b45]">Amount Received</label><input type="number" step="0.01" min="0.01" name="payment_amount" value="{{ old('payment_amount') }}" class="w-full border-[#c1c1bd] bg-white text-[#030203] focus:border-[#9f7957] focus:ring-[#9f7957]"></div>
+                <div><label class="mb-2 block text-sm font-bold uppercase text-[#554b45]">Date Received</label><input type="date" name="payment_date_received" value="{{ old('payment_date_received') }}" class="w-full border-[#c1c1bd] bg-white text-[#030203] focus:border-[#9f7957] focus:ring-[#9f7957]"></div>
+                <div><label class="mb-2 block text-sm font-bold uppercase text-[#554b45]">Official Receipt Number</label><input type="text" name="payment_official_receipt_number" value="{{ old('payment_official_receipt_number') }}" class="w-full border-[#c1c1bd] bg-white text-[#030203] focus:border-[#9f7957] focus:ring-[#9f7957]"></div>
+                <div><label class="mb-2 block text-sm font-bold uppercase text-[#554b45]">Payment Notes</label><input type="text" name="payment_notes" value="{{ old('payment_notes') }}" class="w-full border-[#c1c1bd] bg-white text-[#030203] focus:border-[#9f7957] focus:ring-[#9f7957]"></div>
+            </div>
+            <div class="mt-6 flex items-center justify-between border-t border-[#e3e3df] pt-5"><a href="{{ route('billings.index') }}" class="text-sm font-bold text-[#554b45] hover:text-[#030203]">Cancel</a><button class="bg-[#030203] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#554b45]">Create billing</button></div>
+        </form>
+    </div></div>
+</x-app-layout>

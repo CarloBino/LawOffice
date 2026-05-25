@@ -19,6 +19,8 @@
 /storage/*.key
 /storage/pail
 /vendor
+/create_db.php
+/drop_tables.php
 Homestead.json
 Homestead.yaml
 Thumbs.db

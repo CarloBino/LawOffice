@@ -1,3 +1,48 @@
+## Law Office
+
+A Laravel-based law office management workspace for clients, cases, hearings, documents, billings, lawyers, and opposing parties.
+
+### Database With XAMPP MySQL
+
+Start MySQL from the XAMPP Control Panel, then use these database settings:
+
+```text
+System: MySQL
+Host: 127.0.0.1
+Port: 3306
+Username: root
+Password:
+Database: lawoffice
+```
+
+Create the database and run migrations:
+
+```bash
+php create_db.php
+php artisan migrate
+```
+
+### Local Development
+
+```bash
+composer install
+npm install
+cp .env.example .env
+php artisan key:generate
+php create_db.php
+php artisan migrate
+npm run dev
+php artisan serve
+```
+
+### Tests
+
+```bash
+php artisan test
+```
+
+<!-- Original Laravel documentation follows. -->
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">
