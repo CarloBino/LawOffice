@@ -14,6 +14,9 @@
             @if(session('status'))
                 <div class="mb-4 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800">{{ session('status') }}</div>
             @endif
+            @if($errors->has('account'))
+                <div class="mb-4 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{{ $errors->first('account') }}</div>
+            @endif
 
             <section class="bg-white shadow-sm">
                 <div class="overflow-x-auto">
@@ -24,6 +27,7 @@
                                 <th class="px-5 py-4">Role</th>
                                 <th class="px-5 py-4">Status</th>
                                 <th class="px-5 py-4">Created</th>
+                                <th class="px-5 py-4 text-right">Action</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-[#e3e3df]">
@@ -38,10 +42,22 @@
                                         <span class="px-3 py-1 text-xs font-bold {{ $user->status === 'inactive' ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800' }}">{{ ucfirst($user->status ?: 'active') }}</span>
                                     </td>
                                     <td class="px-5 py-4 text-sm text-[#554b45]">{{ $user->created_at ? $user->created_at->format('M d, Y') : 'Not recorded' }}</td>
+                                    <td class="px-5 py-4 text-right">
+                                        <div class="flex justify-end gap-4">
+                                            <a href="{{ route('staff-users.edit', $user) }}" class="text-sm font-bold text-[#9f7957] hover:text-[#030203]">Edit</a>
+                                            @unless($user->is(Auth::user()))
+                                                <form method="POST" action="{{ route('staff-users.destroy', $user) }}">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="text-sm font-bold text-red-700 hover:text-[#030203]" onclick="return confirm('Delete this account? This action cannot be undone.')">Delete</button>
+                                                </form>
+                                            @endunless
+                                        </div>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="px-5 py-12 text-center text-sm text-[#554b45]">No staff accounts yet.</td>
+                                    <td colspan="5" class="px-5 py-12 text-center text-sm text-[#554b45]">No staff accounts yet.</td>
                                 </tr>
                             @endforelse
                         </tbody>

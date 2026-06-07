@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Billing;
 use App\Models\BillingPayment;
 use App\Models\Client;
+use App\Models\Hearing;
 use App\Models\LegalCase;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class BillingController extends Controller
@@ -27,12 +29,13 @@ class BillingController extends Controller
     public function index(Request $request)
     {
         $sort = $request->query('sort', 'newest');
-        $query = Billing::with(['case.client', 'payments'])->select('billings.*');
+        $query = Billing::with(['case.client', 'hearing', 'payments'])->select('billings.*');
         $query->when($this->userIsLawyer(), fn ($query) => $query->whereHas('case', fn ($case) => $this->restrictCasesToCurrentLawyer($case)));
 
         $query->when($request->filled('payment_status'), fn ($query) => $query->where('payment_status', $request->query('payment_status')));
         $query->when($request->filled('client_id'), fn ($query) => $query->whereHas('case', fn ($case) => $case->where('client_id', $request->query('client_id'))));
         $query->when($request->filled('case_id'), fn ($query) => $query->where('case_id', $request->query('case_id')));
+        $query->when($request->filled('hearing_id'), fn ($query) => $query->where('hearing_id', $request->query('hearing_id')));
         $query->when($request->query('balance') === 'with_balance', fn ($query) => $query->where('balance', '>', 0));
 
         match ($sort) {
@@ -57,30 +60,37 @@ class BillingController extends Controller
         $cases = $this->restrictCasesToCurrentLawyer(LegalCase::query())
             ->orderBy('case_number')
             ->get();
+        $hearings = Hearing::with('case')
+            ->when($this->userIsLawyer(), fn ($query) => $query->whereHas('case', fn ($case) => $this->restrictCasesToCurrentLawyer($case)))
+            ->orderByRaw('hearing_date IS NULL')
+            ->orderByDesc('hearing_date')
+            ->get();
         $statuses = Billing::query()->whereNotNull('payment_status')->distinct()->orderBy('payment_status')->pluck('payment_status');
 
-        return view('billings.index', compact('billings', 'sort', 'clients', 'cases', 'statuses'));
+        return view('billings.index', compact('billings', 'sort', 'clients', 'cases', 'hearings', 'statuses'));
     }
 
     public function export(Request $request): StreamedResponse
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
 
-        $billings = Billing::with('case.client')
+        $billings = Billing::with(['case.client', 'hearing'])
             ->when($request->filled('payment_status'), fn ($query) => $query->where('payment_status', $request->query('payment_status')))
             ->when($request->filled('client_id'), fn ($query) => $query->whereHas('case', fn ($case) => $case->where('client_id', $request->query('client_id'))))
             ->when($request->filled('case_id'), fn ($query) => $query->where('case_id', $request->query('case_id')))
+            ->when($request->filled('hearing_id'), fn ($query) => $query->where('hearing_id', $request->query('hearing_id')))
             ->latest()
             ->get();
 
         return response()->streamDownload(function () use ($billings) {
             $handle = fopen('php://output', 'w');
-            fputcsv($handle, ['Case Number', 'Case Title', 'Client', 'Total', 'Paid', 'Balance', 'Status', 'Last Payment', 'Last Receipt']);
+            fputcsv($handle, ['Case Number', 'Case Title', 'Client', 'Hearing Date', 'Total', 'Paid', 'Balance', 'Status', 'Last Payment', 'Last Receipt']);
             foreach ($billings as $billing) {
                 fputcsv($handle, [
                     optional($billing->case)->case_number,
                     optional($billing->case)->case_title,
                     optional(optional($billing->case)->client)->full_name,
+                    optional($billing->hearing)->hearing_date,
                     $billing->total_amount,
                     $billing->amount_paid,
                     $billing->balance,
@@ -98,17 +108,33 @@ class BillingController extends Controller
      */
     public function create(Request $request)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
+
+        $selectedHearing = $request->query('hearing_id')
+            ? Hearing::with('case.client')->find($request->query('hearing_id'))
+            : null;
+
+        if ($selectedHearing) {
+            $this->authorizeCaseAccess($selectedHearing->case);
+        }
 
         $cases = LegalCase::with('client')
             ->when($request->query('client_id'), fn ($query, $clientId) => $query->where('client_id', $clientId))
-            ->when($request->query('case_id'), fn ($query, $caseId) => $query->where('id', $caseId))
+            ->when($selectedHearing, fn ($query) => $query->where('id', $selectedHearing->case_id))
+            ->when(! $selectedHearing && $request->query('case_id'), fn ($query, $caseId) => $query->where('id', $caseId))
             ->orderBy('case_number')
             ->get();
 
-        $selectedCaseId = $request->query('case_id');
+        $selectedCaseId = $selectedHearing?->case_id ?: $request->query('case_id');
+        $selectedHearingId = $selectedHearing?->id ?: $request->query('hearing_id');
+        $hearings = Hearing::with('case')
+            ->when($selectedCaseId, fn ($query, $caseId) => $query->where('case_id', $caseId))
+            ->when($this->userIsLawyer(), fn ($query) => $query->whereHas('case', fn ($case) => $this->restrictCasesToCurrentLawyer($case)))
+            ->orderByRaw('hearing_date IS NULL')
+            ->orderByDesc('hearing_date')
+            ->get();
 
-        return view('billings.create', compact('cases', 'selectedCaseId'));
+        return view('billings.create', compact('cases', 'hearings', 'selectedCaseId', 'selectedHearingId'));
     }
 
     /**
@@ -116,10 +142,11 @@ class BillingController extends Controller
      */
     public function store(Request $request)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
 
         $data = $request->validate([
             'case_id' => 'required|exists:cases,id',
+            'hearing_id' => 'nullable|exists:hearings,id',
             'acceptance_fee' => 'nullable|numeric|min:0',
             'appearance_fee' => 'nullable|numeric|min:0',
             'pleading_fee' => 'nullable|numeric|min:0',
@@ -133,12 +160,22 @@ class BillingController extends Controller
             'payment_notes' => 'nullable|string',
         ]);
 
+        if (! empty($data['hearing_id'])) {
+            $hearing = Hearing::findOrFail($data['hearing_id']);
+            if ((int) $hearing->case_id !== (int) $data['case_id']) {
+                throw ValidationException::withMessages([
+                    'hearing_id' => 'Select a hearing that belongs to the selected case.',
+                ]);
+            }
+            $this->authorizeCaseAccess($hearing->case);
+        }
+
         $paymentData = $data;
         $data = $this->prepareBillingData($data);
 
         $billing = Billing::create($data);
         $this->storeInitialPayment($billing, $paymentData);
-        $billing->load('case.client');
+        $billing->load('case.client', 'hearing');
         $this->logActivity(
             'Billing created',
             'Created billing for '.(optional($billing->case)->case_number ?: 'case').' with total '.number_format($billing->total_amount, 2).'.',
@@ -153,7 +190,7 @@ class BillingController extends Controller
      */
     public function show(Billing $billing)
     {
-        $billing->load(['case.client', 'payments' => fn ($query) => $query->latest('date_received')->latest('id')]);
+        $billing->load(['case.client', 'hearing', 'payments' => fn ($query) => $query->latest('date_received')->latest('id')]);
         $this->authorizeCaseAccess($billing->case);
         return view('billings.show', compact('billing'));
     }
@@ -178,7 +215,7 @@ class BillingController extends Controller
 
     public function storePayment(Request $request, Billing $billing)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
 
         $data = $request->validate([
             'amount' => 'required|numeric|min:0.01',
@@ -201,7 +238,7 @@ class BillingController extends Controller
 
     public function destroyPayment(Billing $billing, BillingPayment $payment)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin');
         abort_unless($payment->billing_id === $billing->id, 404);
 
         $amount = $payment->amount;
@@ -218,7 +255,7 @@ class BillingController extends Controller
 
     public function togglePaid(Billing $billing)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin');
         $billing->load('payments');
         $isPaid = (float) $billing->balance <= 0 || $billing->payment_status === 'Paid';
 

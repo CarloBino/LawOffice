@@ -19,12 +19,14 @@ class OpposingPartyController extends Controller
 
     public function create()
     {
+        $this->requireRole('admin', 'staff');
         $cases = $this->restrictCasesToCurrentLawyer(LegalCase::with('client'))->orderBy('case_number')->get();
         return view('opposing_parties.create', compact('cases'));
     }
 
     public function store(Request $request)
     {
+        $this->requireRole('admin', 'staff');
         $data = $request->validate([
             'case_id' => 'required|exists:cases,id',
             'opposing_party_name' => 'required|string|max:255',
@@ -49,6 +51,7 @@ class OpposingPartyController extends Controller
 
     public function edit(OpposingParty $opposingParty)
     {
+        $this->requireRole('admin', 'staff');
         $opposingParty->load('case');
         $this->authorizeCaseAccess($opposingParty->case);
         $cases = $this->restrictCasesToCurrentLawyer(LegalCase::with('client'))->orderBy('case_number')->get();
@@ -57,6 +60,7 @@ class OpposingPartyController extends Controller
 
     public function update(Request $request, OpposingParty $opposingParty)
     {
+        $this->requireRole('admin', 'staff');
         $data = $request->validate([
             'case_id' => 'required|exists:cases,id',
             'opposing_party_name' => 'required|string|max:255',

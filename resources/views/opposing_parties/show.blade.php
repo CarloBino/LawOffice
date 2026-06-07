@@ -1,5 +1,5 @@
 <x-app-layout>
-    <x-slot name="header"><div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-sm font-bold uppercase text-[#9f7957]">Case party</p><h2 class="mt-2 text-3xl font-extrabold text-[#030203]">{{ $party->opposing_party_name }}</h2></div><a href="{{ route('opposing-parties.edit', $party->id) }}" class="inline-flex items-center justify-center bg-[#030203] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#554b45]">Edit party</a></div></x-slot>
+    <x-slot name="header"><div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p class="text-sm font-bold uppercase text-[#9f7957]">Case party</p><h2 class="mt-2 text-3xl font-extrabold text-[#030203]">{{ $party->opposing_party_name }}</h2></div>@unless(Auth::user()?->isLawyer())<a href="{{ route('opposing-parties.edit', $party->id) }}" class="inline-flex items-center justify-center bg-[#030203] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#554b45]">Edit party</a>@endunless</div></x-slot>
     <div class="bg-[#eef0ec] py-8"><div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
         <section class="bg-white shadow-sm">
             <div class="border-b border-[#e3e3df] px-6 py-5">

@@ -10,6 +10,19 @@ class Lawyer extends Model
 {
     protected $fillable = ['user_id','full_name','contact_number','email','specialization','status'];
 
+    public function getDisplayNameAttribute(): string
+    {
+        $name = trim((string) $this->full_name);
+
+        if ($name === '') {
+            return 'Atty.';
+        }
+
+        return str_starts_with(strtolower($name), 'atty.')
+            ? $name
+            : 'Atty. '.$name;
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

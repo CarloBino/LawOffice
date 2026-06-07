@@ -11,6 +11,19 @@ class LegalCase extends Model
 {
     protected $table = 'cases';
 
+    public const CASE_TYPES = [
+        'Civil',
+        'Criminal',
+        'Family',
+        'Labor',
+        'Corporate',
+        'Property',
+        'Collection',
+        'Estate',
+        'Administrative',
+        'Other',
+    ];
+
     protected $fillable = [
         'case_number', 'case_title', 'case_type', 'case_status', 'client_id', 'assigned_lawyer_id', 'date_filed', 'description', 'priority_level'
     ];

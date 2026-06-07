@@ -13,7 +13,7 @@
 
         <section class="mt-8 grid grid-cols-2 border border-[#e3e3df] text-sm">
             <div class="border-b border-[#e3e3df] p-4"><strong>Client</strong><br>{{ optional($case->client)->full_name ?: 'Unassigned' }}</div>
-            <div class="border-b border-l border-[#e3e3df] p-4"><strong>Lawyer</strong><br>{{ optional($case->assignedLawyer)->full_name ?: 'Unassigned' }}</div>
+            <div class="border-b border-l border-[#e3e3df] p-4"><strong>Lawyer</strong><br>{{ $case->assignedLawyer?->display_name ?: 'Unassigned' }}</div>
             <div class="border-b border-[#e3e3df] p-4"><strong>Status</strong><br>{{ $case->case_status }}</div>
             <div class="border-b border-l border-[#e3e3df] p-4"><strong>Priority</strong><br>{{ $case->priority_level }}</div>
             <div class="col-span-2 p-4"><strong>Description</strong><br>{{ $case->description ?: 'No description recorded.' }}</div>

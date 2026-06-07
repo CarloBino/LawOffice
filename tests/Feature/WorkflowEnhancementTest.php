@@ -17,7 +17,7 @@ class WorkflowEnhancementTest extends TestCase
 
     public function test_filters_print_pages_and_exports_are_available(): void
     {
-        $user = User::factory()->create(['role' => 'staff']);
+        $user = User::factory()->create(['role' => 'admin']);
         $client = Client::create(['full_name' => 'Ralph Medino', 'client_type' => 'Individual']);
         $case = LegalCase::create([
             'case_number' => 'CASE-001',

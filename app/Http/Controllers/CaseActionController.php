@@ -26,6 +26,7 @@ class CaseActionController extends Controller
      */
     public function create()
     {
+        $this->requireRole('admin', 'staff');
         $cases = $this->restrictCasesToCurrentLawyer(LegalCase::with('client'))->orderBy('case_number')->get();
         return view('case_actions.create', compact('cases'));
     }
@@ -35,6 +36,7 @@ class CaseActionController extends Controller
      */
     public function store(Request $request)
     {
+        $this->requireRole('admin', 'staff');
         $data = $request->validate([
             'case_id' => 'required|exists:cases,id',
             'action_type' => 'required|string',
@@ -66,6 +68,7 @@ class CaseActionController extends Controller
      */
     public function edit(CaseAction $caseAction)
     {
+        $this->requireRole('admin', 'staff');
         $caseAction->load('case');
         $this->authorizeCaseAccess($caseAction->case);
         $cases = $this->restrictCasesToCurrentLawyer(LegalCase::with('client'))->orderBy('case_number')->get();
@@ -77,6 +80,7 @@ class CaseActionController extends Controller
      */
     public function update(Request $request, CaseAction $caseAction)
     {
+        $this->requireRole('admin', 'staff');
         $data = $request->validate([
             'case_id' => 'required|exists:cases,id',
             'action_type' => 'required|string',

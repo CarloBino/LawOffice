@@ -47,7 +47,7 @@ class ClientProfileTest extends TestCase
         $billing->recalculatePaymentTotals();
         Hearing::create([
             'case_id' => $case->id,
-            'hearing_date' => '2026-06-01',
+            'hearing_date' => now()->addWeek()->toDateString(),
             'hearing_time' => '09:00:00',
             'court_venue' => 'RTC Branch 1',
             'hearing_purpose' => 'Arraignment',

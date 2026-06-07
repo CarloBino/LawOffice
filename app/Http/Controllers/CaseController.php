@@ -50,13 +50,14 @@ class CaseController extends Controller
      */
     public function create(Request $request)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
 
         $clients = Client::orderBy('full_name')->get();
         $lawyers = Lawyer::orderBy('full_name')->get();
         $selectedClientId = $request->query('client_id');
+        $caseTypes = LegalCase::CASE_TYPES;
 
-        return view('cases.create', compact('clients','lawyers', 'selectedClientId'));
+        return view('cases.create', compact('clients','lawyers', 'selectedClientId', 'caseTypes'));
     }
 
     /**
@@ -64,12 +65,12 @@ class CaseController extends Controller
      */
     public function store(Request $request)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
 
         $data = $request->validate([
             'case_number' => 'required|unique:cases,case_number',
             'case_title' => 'required|string|max:255',
-            'case_type' => 'nullable|string',
+            'case_type' => 'nullable|in:'.implode(',', LegalCase::CASE_TYPES),
             'case_status' => 'nullable|string',
             'client_id' => 'nullable|exists:clients,id',
             'assigned_lawyer_id' => 'nullable|exists:lawyers,id',
@@ -90,13 +91,19 @@ class CaseController extends Controller
     public function show(LegalCase $case, Request $request)
     {
         $this->authorizeCaseAccess($case);
-        $case->load(['client','assignedLawyer','hearings','actions','documents','billings.payments','opposingParties']);
+        $case->load(['client','assignedLawyer','hearings','actions','documents','billings.hearing','billings.payments','opposingParties']);
+        $billingSummary = [
+            'total_billed' => $case->billings->sum('total_amount'),
+            'total_paid' => $case->billings->sum('amount_paid'),
+            'balance' => $case->billings->sum('balance'),
+            'count' => $case->billings->count(),
+        ];
 
         if ($request->wantsJson()) {
             return response()->json($case);
         }
 
-        return view('cases.show', compact('case'));
+        return view('cases.show', compact('case', 'billingSummary'));
     }
 
     public function printSummary(LegalCase $case)
@@ -112,10 +119,12 @@ class CaseController extends Controller
      */
     public function edit(LegalCase $case)
     {
+        $this->requireRole('admin', 'staff');
         $this->authorizeCaseAccess($case);
         $clients = Client::orderBy('full_name')->get();
         $lawyers = Lawyer::orderBy('full_name')->get();
-        return view('cases.edit', compact('case','clients','lawyers'));
+        $caseTypes = LegalCase::CASE_TYPES;
+        return view('cases.edit', compact('case','clients','lawyers', 'caseTypes'));
     }
 
     /**
@@ -123,12 +132,13 @@ class CaseController extends Controller
      */
     public function update(Request $request, LegalCase $case)
     {
+        $this->requireRole('admin', 'staff');
         $this->authorizeCaseAccess($case);
 
         $data = $request->validate([
             'case_number' => 'required|unique:cases,case_number,'.$case->id,
             'case_title' => 'required|string|max:255',
-            'case_type' => 'nullable|string',
+            'case_type' => 'nullable|in:'.implode(',', LegalCase::CASE_TYPES),
             'case_status' => 'nullable|string',
             'client_id' => 'nullable|exists:clients,id',
             'assigned_lawyer_id' => 'nullable|exists:lawyers,id',

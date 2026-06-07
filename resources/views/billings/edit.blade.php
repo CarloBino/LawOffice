@@ -47,11 +47,15 @@
                                 <td class="py-3 pr-4 text-sm text-[#554b45]">{{ $payment->official_receipt_number ?: 'Not recorded' }}</td>
                                 <td class="py-3 pr-4 text-sm text-[#554b45]">{{ $payment->notes ?: 'None' }}</td>
                                 <td class="py-3 text-right">
-                                    <form method="POST" action="{{ route('billings.payments.destroy', [$billing->id, $payment->id]) }}">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button class="text-sm font-bold text-red-700 hover:text-[#030203]" onclick="return confirm('Remove this payment record?')">Remove</button>
-                                    </form>
+                                    @if(Auth::user()?->isAdmin())
+                                        <form method="POST" action="{{ route('billings.payments.destroy', [$billing->id, $payment->id]) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button class="text-sm font-bold text-red-700 hover:text-[#030203]" onclick="return confirm('Remove this payment record?')">Remove</button>
+                                        </form>
+                                    @else
+                                        <span class="text-sm text-[#7a716b]">View only</span>
+                                    @endif
                                 </td>
                             </tr>
                         @empty

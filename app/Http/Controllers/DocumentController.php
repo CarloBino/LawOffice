@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Document;
 use App\Models\Client;
+use App\Models\Document;
 use App\Models\LegalCase;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class DocumentController extends Controller
 {
@@ -50,7 +52,9 @@ class DocumentController extends Controller
      */
     public function create()
     {
+        $this->requireRole('admin', 'staff');
         $cases = $this->restrictCasesToCurrentLawyer(LegalCase::with('client'))->orderBy('case_number')->get();
+
         return view('documents.create', compact('cases'));
     }
 
@@ -59,6 +63,7 @@ class DocumentController extends Controller
      */
     public function store(Request $request)
     {
+        $this->requireRole('admin', 'staff');
         $data = $request->validate([
             'case_id' => 'required|exists:cases,id',
             'document_name' => 'required|string|max:255',
@@ -68,13 +73,14 @@ class DocumentController extends Controller
         $this->authorizeCaseAccess(LegalCase::find($data['case_id']));
 
         if ($request->hasFile('file')) {
-            $path = $request->file('file')->store('documents', 'public');
+            $path = $request->file('file')->store('documents');
             $data['file_path'] = $path;
         }
 
         $document = Document::create($data);
         $this->logActivity('Document uploaded', "Uploaded document {$document->document_name}.", $document);
-        return redirect()->route('documents.show', $document->id)->with('success','Document created.');
+
+        return redirect()->route('documents.show', $document->id)->with('success', 'Document created.');
     }
 
     /**
@@ -84,6 +90,7 @@ class DocumentController extends Controller
     {
         $document->load('case.client');
         $this->authorizeCaseAccess($document->case);
+
         return view('documents.show', compact('document'));
     }
 
@@ -92,10 +99,12 @@ class DocumentController extends Controller
      */
     public function edit(Document $document)
     {
+        $this->requireRole('admin', 'staff');
         $document->load('case');
         $this->authorizeCaseAccess($document->case);
         $cases = $this->restrictCasesToCurrentLawyer(LegalCase::with('client'))->orderBy('case_number')->get();
-        return view('documents.edit', compact('document','cases'));
+
+        return view('documents.edit', compact('document', 'cases'));
     }
 
     /**
@@ -103,6 +112,7 @@ class DocumentController extends Controller
      */
     public function update(Request $request, Document $document)
     {
+        $this->requireRole('admin', 'staff');
         $data = $request->validate([
             'case_id' => 'required|exists:cases,id',
             'document_name' => 'required|string|max:255',
@@ -114,17 +124,17 @@ class DocumentController extends Controller
         $this->authorizeCaseAccess(LegalCase::find($data['case_id']));
 
         if ($request->hasFile('file')) {
-            // delete old file if exists
-            if ($document->file_path && \Storage::disk('public')->exists($document->file_path)) {
-                \Storage::disk('public')->delete($document->file_path);
+            if ($document->file_path && Storage::exists($document->file_path)) {
+                Storage::delete($document->file_path);
             }
-            $path = $request->file('file')->store('documents', 'public');
+            $path = $request->file('file')->store('documents');
             $data['file_path'] = $path;
         }
 
         $document->update($data);
         $this->logActivity('Document updated', "Updated document {$document->document_name}.", $document);
-        return redirect()->route('documents.show', $document->id)->with('success','Document updated.');
+
+        return redirect()->route('documents.show', $document->id)->with('success', 'Document updated.');
     }
 
     /**
@@ -134,10 +144,21 @@ class DocumentController extends Controller
     {
         $this->requireRole('admin');
         $this->logActivity('Document deleted', "Deleted document {$document->document_name}.", $document);
-        if ($document->file_path && \Storage::disk('public')->exists($document->file_path)) {
-            \Storage::disk('public')->delete($document->file_path);
+        if ($document->file_path && Storage::exists($document->file_path)) {
+            Storage::delete($document->file_path);
         }
         $document->delete();
-        return redirect()->route('documents.index')->with('success','Document deleted.');
+
+        return redirect()->route('documents.index')->with('success', 'Document deleted.');
+    }
+
+    public function download(Document $document): StreamedResponse
+    {
+        $document->load('case');
+        $this->authorizeCaseAccess($document->case);
+
+        abort_unless($document->file_path && Storage::exists($document->file_path), 404);
+
+        return Storage::download($document->file_path, $document->document_name);
     }
 }

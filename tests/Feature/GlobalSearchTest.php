@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Billing;
 use App\Models\Client;
 use App\Models\LegalCase;
+use App\Models\OfficeExpense;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -53,5 +54,28 @@ class GlobalSearchTest extends TestCase
             ->assertOk()
             ->assertSee('Payment')
             ->assertSee('Receipt 1122');
+    }
+
+    public function test_only_administrator_search_includes_office_expenses(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+        $staff = User::factory()->create(['role' => 'staff']);
+        OfficeExpense::create([
+            'expense_type' => 'Confidential Office Rent',
+            'amount' => 5000,
+            'payment_status' => 'Unpaid',
+        ]);
+
+        $this->actingAs($staff)
+            ->get(route('search.index', ['q' => 'Confidential Office Rent']))
+            ->assertOk()
+            ->assertSee('0 results for')
+            ->assertDontSee('>Expense<', false);
+
+        $this->actingAs($admin)
+            ->get(route('search.index', ['q' => 'Confidential Office Rent']))
+            ->assertOk()
+            ->assertSee('Confidential Office Rent')
+            ->assertSee('>Expense<', false);
     }
 }

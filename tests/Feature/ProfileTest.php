@@ -61,9 +61,10 @@ class ProfileTest extends TestCase
         $this->assertNotNull($user->refresh()->email_verified_at);
     }
 
-    public function test_user_can_delete_their_account(): void
+    public function test_administrator_can_delete_their_account_when_another_active_admin_exists(): void
     {
-        $user = User::factory()->create();
+        User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $user = User::factory()->create(['role' => 'admin', 'status' => 'active']);
 
         $response = $this
             ->actingAs($user)
@@ -81,7 +82,8 @@ class ProfileTest extends TestCase
 
     public function test_correct_password_must_be_provided_to_delete_account(): void
     {
-        $user = User::factory()->create();
+        User::factory()->create(['role' => 'admin', 'status' => 'active']);
+        $user = User::factory()->create(['role' => 'admin', 'status' => 'active']);
 
         $response = $this
             ->actingAs($user)
@@ -95,5 +97,37 @@ class ProfileTest extends TestCase
             ->assertRedirect('/profile');
 
         $this->assertNotNull($user->fresh());
+    }
+
+    public function test_staff_and_lawyers_cannot_delete_their_own_accounts(): void
+    {
+        foreach (['staff', 'lawyer'] as $role) {
+            $user = User::factory()->create(['role' => $role, 'status' => 'active']);
+
+            $this->actingAs($user)
+                ->delete('/profile', ['password' => 'password'])
+                ->assertForbidden();
+
+            $this->assertNotNull($user->fresh());
+        }
+    }
+
+    public function test_last_active_administrator_cannot_delete_their_account(): void
+    {
+        $admin = User::factory()->create([
+            'role' => 'admin',
+            'status' => 'active',
+        ]);
+
+        $this->actingAs($admin)
+            ->from('/profile')
+            ->delete('/profile', [
+                'password' => 'password',
+            ])
+            ->assertSessionHasErrorsIn('userDeletion', 'password')
+            ->assertRedirect('/profile');
+
+        $this->assertAuthenticatedAs($admin);
+        $this->assertNotNull($admin->fresh());
     }
 }

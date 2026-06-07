@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Billing;
+use App\Models\Hearing;
 use App\Models\LegalCase;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,7 +15,7 @@ class BillingTogglePaidTest extends TestCase
 
     public function test_user_can_mark_billing_paid_and_unpaid(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
         $case = LegalCase::create([
             'case_number' => 'BILL-001',
             'case_title' => 'Billing Matter',
@@ -137,6 +138,47 @@ class BillingTogglePaidTest extends TestCase
         $this->assertDatabaseCount('billing_payments', 2);
     }
 
+    public function test_staff_can_record_but_cannot_delete_or_reverse_payments(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+        $case = LegalCase::create([
+            'case_number' => 'BILL-STAFF-001',
+            'case_title' => 'Protected Payment Matter',
+        ]);
+        $billing = Billing::create([
+            'case_id' => $case->id,
+            'acceptance_fee' => 3000,
+            'total_amount' => 3000,
+            'amount_paid' => 0,
+            'balance' => 3000,
+            'payment_status' => 'Unpaid',
+        ]);
+
+        $this->actingAs($staff)
+            ->post(route('billings.payments.store', $billing), [
+                'amount' => 1000,
+                'date_received' => '2026-06-07',
+                'official_receipt_number' => 'OR-STAFF-1',
+            ])
+            ->assertRedirect(route('billings.show', $billing));
+
+        $payment = $billing->payments()->firstOrFail();
+
+        $this->actingAs($staff)
+            ->delete(route('billings.payments.destroy', [$billing, $payment]))
+            ->assertForbidden();
+
+        $this->actingAs($staff)
+            ->patch(route('billings.toggle-paid', $billing))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('billing_payments', [
+            'id' => $payment->id,
+            'billing_id' => $billing->id,
+            'amount' => 1000,
+        ]);
+    }
+
     public function test_billing_charges_cannot_be_edited_after_creation(): void
     {
         $user = User::factory()->create();
@@ -178,6 +220,73 @@ class BillingTogglePaidTest extends TestCase
         $this->actingAs($user)
             ->get(route('billings.create', ['case_id' => $case->id]))
             ->assertOk()
+            ->assertSee('Select case / client')
             ->assertSee('BILL-005 - Selected Matter');
+    }
+
+    public function test_billing_can_be_linked_to_a_hearing(): void
+    {
+        $user = User::factory()->create(['role' => 'staff']);
+        $case = LegalCase::create([
+            'case_number' => 'BILL-006',
+            'case_title' => 'Hearing Fee Matter',
+        ]);
+        $hearing = Hearing::create([
+            'case_id' => $case->id,
+            'hearing_date' => '2026-06-30',
+            'hearing_purpose' => 'Pre-trial',
+        ]);
+
+        $this->actingAs($user)
+            ->get(route('billings.create', ['hearing_id' => $hearing->id]))
+            ->assertOk()
+            ->assertSee('Related Hearing')
+            ->assertSee('BILL-006')
+            ->assertSee('Pre-trial');
+
+        $this->actingAs($user)
+            ->post(route('billings.store'), [
+                'case_id' => $case->id,
+                'hearing_id' => $hearing->id,
+                'appearance_fee' => 1500,
+            ])
+            ->assertRedirect();
+
+        $billing = Billing::where('hearing_id', $hearing->id)->firstOrFail();
+
+        $this->assertEquals(1500, $billing->total_amount);
+        $this->assertEquals(1500, $billing->balance);
+    }
+
+    public function test_billing_rejects_hearing_from_another_case_with_form_error(): void
+    {
+        $user = User::factory()->create(['role' => 'staff']);
+        $case = LegalCase::create([
+            'case_number' => 'BILL-007',
+            'case_title' => 'Selected Matter',
+        ]);
+        $otherCase = LegalCase::create([
+            'case_number' => 'BILL-008',
+            'case_title' => 'Other Matter',
+        ]);
+        $hearing = Hearing::create([
+            'case_id' => $otherCase->id,
+            'hearing_date' => '2026-07-01',
+        ]);
+
+        $this->actingAs($user)
+            ->from(route('billings.create'))
+            ->post(route('billings.store'), [
+                'case_id' => $case->id,
+                'hearing_id' => $hearing->id,
+                'appearance_fee' => 1500,
+            ])
+            ->assertRedirect(route('billings.create'))
+            ->assertSessionHasErrors('hearing_id');
+
+        $this->assertDatabaseMissing('billings', [
+            'case_id' => $case->id,
+            'hearing_id' => $hearing->id,
+        ]);
     }
 }

@@ -63,6 +63,7 @@ class HearingController extends Controller
      */
     public function create()
     {
+        $this->requireRole('admin', 'staff');
         $cases = $this->restrictCasesToCurrentLawyer(LegalCase::with(['client', 'assignedLawyer']))
             ->orderBy('case_number')
             ->get();
@@ -74,17 +75,8 @@ class HearingController extends Controller
      */
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'case_id' => 'required|exists:cases,id',
-            'hearing_date' => 'nullable|date',
-            'hearing_time' => 'nullable',
-            'court_venue' => 'nullable|string',
-            'court_branch' => 'nullable|string',
-            'court_jurisdiction' => 'nullable|string',
-            'judge_name' => 'nullable|string',
-            'hearing_purpose' => 'nullable|string',
-            'hearing_status' => 'nullable|string',
-        ]);
+        $this->requireRole('admin', 'staff');
+        $data = $this->validatedData($request);
         $this->authorizeCaseAccess(LegalCase::find($data['case_id']));
 
         $hearing = Hearing::create($data);
@@ -98,9 +90,16 @@ class HearingController extends Controller
      */
     public function show(Hearing $hearing)
     {
-        $hearing->load(['case.client', 'case.assignedLawyer']);
+        $hearing->load(['case.client', 'case.assignedLawyer', 'billings.payments']);
         $this->authorizeCaseAccess($hearing->case);
-        return view('hearings.show', compact('hearing'));
+        $billingSummary = [
+            'total_billed' => $hearing->billings->sum('total_amount'),
+            'total_paid' => $hearing->billings->sum('amount_paid'),
+            'balance' => $hearing->billings->sum('balance'),
+            'count' => $hearing->billings->count(),
+        ];
+
+        return view('hearings.show', compact('hearing', 'billingSummary'));
     }
 
     /**
@@ -108,6 +107,7 @@ class HearingController extends Controller
      */
     public function edit(Hearing $hearing)
     {
+        $this->requireRole('admin', 'staff');
         $hearing->load('case');
         $this->authorizeCaseAccess($hearing->case);
         $cases = $this->restrictCasesToCurrentLawyer(LegalCase::with(['client', 'assignedLawyer']))
@@ -121,17 +121,8 @@ class HearingController extends Controller
      */
     public function update(Request $request, Hearing $hearing)
     {
-        $data = $request->validate([
-            'case_id' => 'required|exists:cases,id',
-            'hearing_date' => 'nullable|date',
-            'hearing_time' => 'nullable',
-            'court_venue' => 'nullable|string',
-            'court_branch' => 'nullable|string',
-            'court_jurisdiction' => 'nullable|string',
-            'judge_name' => 'nullable|string',
-            'hearing_purpose' => 'nullable|string',
-            'hearing_status' => 'nullable|string',
-        ]);
+        $this->requireRole('admin', 'staff');
+        $data = $this->validatedData($request);
         $hearing->load('case');
         $this->authorizeCaseAccess($hearing->case);
         $this->authorizeCaseAccess(LegalCase::find($data['case_id']));
@@ -152,5 +143,20 @@ class HearingController extends Controller
         $this->logActivity('Hearing deleted', 'Deleted hearing for '.(optional($hearing->case)->case_number ?: 'case').'.', $hearing);
         $hearing->delete();
         return redirect()->route('hearings.index')->with('success','Hearing deleted.');
+    }
+
+    private function validatedData(Request $request): array
+    {
+        return $request->validate([
+            'case_id' => ['required', 'exists:cases,id'],
+            'hearing_date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:9999-12-31'],
+            'hearing_time' => ['nullable', 'date_format:H:i'],
+            'court_venue' => ['nullable', 'string'],
+            'court_branch' => ['nullable', 'string'],
+            'court_jurisdiction' => ['nullable', 'string'],
+            'judge_name' => ['nullable', 'string'],
+            'hearing_purpose' => ['nullable', 'string'],
+            'hearing_status' => ['nullable', 'string'],
+        ]);
     }
 }

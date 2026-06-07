@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Client;
+use App\Models\Billing;
 use App\Models\Hearing;
 use App\Models\Lawyer;
 use App\Models\LegalCase;
@@ -62,6 +63,15 @@ class HearingFlowTest extends TestCase
             'judge_name' => 'Judge Cruz',
             'hearing_purpose' => 'Pre-trial',
         ]);
+        Billing::create([
+            'case_id' => $case->id,
+            'hearing_id' => $hearing->id,
+            'appearance_fee' => 2000,
+            'total_amount' => 2000,
+            'amount_paid' => 500,
+            'balance' => 1500,
+            'payment_status' => 'Partial',
+        ]);
 
         $this->actingAs($user)
             ->get(route('hearings.show', $hearing))
@@ -70,6 +80,9 @@ class HearingFlowTest extends TestCase
             ->assertSee('Ralph Medino')
             ->assertSee('Atty. Maria Santos')
             ->assertSee('Judge Cruz')
+            ->assertSee('Hearing billing')
+            ->assertSee('2,000.00')
+            ->assertSee('1,500.00')
             ->assertSee('Open case');
     }
 
@@ -100,5 +113,27 @@ class HearingFlowTest extends TestCase
         $hearing = Hearing::firstOrFail();
         $this->assertSame('Cybercrime', $hearing->court_jurisdiction);
         $this->assertSame('RTC Branch 8 - Tacloban City, Leyte', $hearing->court_branch);
+    }
+
+    public function test_invalid_five_digit_hearing_year_returns_a_form_error(): void
+    {
+        $user = User::factory()->create();
+        $case = LegalCase::create([
+            'case_number' => 'HEAR-004',
+            'case_title' => 'Invalid Date Matter',
+        ]);
+
+        $this->actingAs($user)
+            ->from(route('hearings.create'))
+            ->post(route('hearings.store'), [
+                'case_id' => $case->id,
+                'hearing_date' => '20226-06-10',
+                'hearing_time' => '08:30',
+                'hearing_status' => 'Scheduled',
+            ])
+            ->assertRedirect(route('hearings.create'))
+            ->assertSessionHasErrors('hearing_date');
+
+        $this->assertDatabaseCount('hearings', 0);
     }
 }

@@ -31,8 +31,11 @@ class SearchController extends Controller
                 ->merge($this->payments($like))
                 ->merge($this->documents($like))
                 ->merge($this->lawyers($like))
-                ->merge($this->officeExpenses($like))
                 ->merge($this->opposingParties($like));
+
+            if (auth()->user()?->isAdmin()) {
+                $results = $results->merge($this->officeExpenses($like));
+            }
         }
 
         return view('search.index', compact('query', 'results'));
@@ -73,7 +76,7 @@ class SearchController extends Controller
             ->map(fn (LegalCase $case) => [
                 'type' => 'Case',
                 'title' => $case->case_number.' - '.$case->case_title,
-                'details' => (optional($case->client)->full_name ?: 'No client').' / '.(optional($case->assignedLawyer)->full_name ?: 'No lawyer'),
+                'details' => (optional($case->client)->full_name ?: 'No client').' / '.($case->assignedLawyer?->display_name ?: 'No lawyer'),
                 'url' => route('cases.show', $case),
             ]);
     }
@@ -170,7 +173,7 @@ class SearchController extends Controller
             ->get()
             ->map(fn (Lawyer $lawyer) => [
                 'type' => 'Lawyer',
-                'title' => $lawyer->full_name,
+                'title' => $lawyer->display_name,
                 'details' => ($lawyer->specialization ?: 'No specialization').' / '.($lawyer->status ?: 'No status'),
                 'url' => route('lawyers.show', $lawyer),
             ]);
@@ -179,7 +182,6 @@ class SearchController extends Controller
     private function officeExpenses(string $like)
     {
         return OfficeExpense::query()
-            ->when($this->userIsLawyer(), fn ($query) => $query->whereRaw('1 = 0'))
             ->where(function ($query) use ($like) {
                 $query->where('expense_type', 'like', $like)
                     ->orWhere('description', 'like', $like)

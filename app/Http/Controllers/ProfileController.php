@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,8 +17,17 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $user = $request->user();
+        $canDeleteAccount = $user->isAdmin()
+            && User::where('role', 'admin')->where('status', 'active')->count() > 1;
+        $deleteAccountMessage = $user->isAdmin()
+            ? 'This is the last active administrator account. Create another active administrator before deleting it.'
+            : 'Only an administrator can delete workplace accounts.';
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
+            'canDeleteAccount' => $canDeleteAccount,
+            'deleteAccountMessage' => $deleteAccountMessage,
         ]);
     }
 
@@ -42,11 +52,22 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        abort_unless($request->user()?->isAdmin(), 403);
+
         $request->validateWithBag('userDeletion', [
             'password' => ['required', 'current_password'],
         ]);
 
         $user = $request->user();
+
+        if ($user->isAdmin()
+            && $user->status === 'active'
+            && User::where('role', 'admin')->where('status', 'active')->count() <= 1) {
+            return Redirect::route('profile.edit')
+                ->withErrors([
+                    'password' => 'The last active administrator account cannot be deleted.',
+                ], 'userDeletion');
+        }
 
         Auth::logout();
 

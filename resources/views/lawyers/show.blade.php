@@ -3,7 +3,7 @@
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <p class="text-sm font-bold uppercase text-[#9f7957]">Lawyer profile</p>
-                <h2 class="mt-2 text-3xl font-extrabold text-[#030203]">{{ $lawyer->full_name }}</h2>
+                <h2 class="mt-2 text-3xl font-extrabold text-[#030203]">{{ $lawyer->display_name }}</h2>
             </div>
             @unless(Auth::user()?->isLawyer())
                 <a href="{{ route('lawyers.edit', $lawyer->id) }}" class="inline-flex items-center justify-center bg-[#030203] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#554b45]">Edit lawyer</a>
@@ -17,7 +17,7 @@
                 <div class="grid gap-5 md:grid-cols-[1.4fr_1fr]">
                     <div>
                         <p class="text-xs font-bold uppercase text-[#9f7957]">{{ $lawyer->status ?: 'Active' }}</p>
-                        <h3 class="mt-1 text-2xl font-extrabold text-[#030203]">{{ $lawyer->full_name }}</h3>
+                        <h3 class="mt-1 text-2xl font-extrabold text-[#030203]">{{ $lawyer->display_name }}</h3>
                         <div class="mt-4 grid gap-3 text-sm text-[#554b45] sm:grid-cols-3">
                             <p><span class="block text-xs font-bold uppercase text-[#9f7957]">Contact</span>{{ $lawyer->contact_number ?: 'Not recorded' }}</p>
                             <p><span class="block text-xs font-bold uppercase text-[#9f7957]">Email</span>{{ $lawyer->email ?: 'Not recorded' }}</p>

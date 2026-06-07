@@ -25,7 +25,7 @@ class LawyerController extends Controller
      */
     public function create()
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
         return view('lawyers.create');
     }
 
@@ -34,7 +34,7 @@ class LawyerController extends Controller
      */
     public function store(Request $request)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
 
         $data = $request->validate([
             'user_id' => 'nullable|exists:users,id',
@@ -84,7 +84,7 @@ class LawyerController extends Controller
      */
     public function edit(Lawyer $lawyer)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
         return view('lawyers.edit', compact('lawyer'));
     }
 
@@ -93,7 +93,7 @@ class LawyerController extends Controller
      */
     public function update(Request $request, Lawyer $lawyer)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
 
         $data = $request->validate([
             'user_id' => 'nullable|exists:users,id',
