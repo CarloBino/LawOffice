@@ -5,7 +5,9 @@
                 <p class="text-sm font-bold uppercase text-[#9f7957]">Case parties</p>
                 <h2 class="mt-2 text-3xl font-extrabold text-[#030203]">Opposing Parties</h2>
             </div>
-            <a href="{{ route('opposing-parties.create') }}" class="inline-flex items-center justify-center bg-[#030203] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#554b45]">New party</a>
+            @unless(Auth::user()?->isLawyer())
+                <a href="{{ route('opposing-parties.create') }}" class="inline-flex items-center justify-center bg-[#030203] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#554b45]">New party</a>
+            @endunless
         </div>
     </x-slot>
     <div class="bg-[#eef0ec] py-8"><div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
@@ -22,7 +24,7 @@
                         <td class="px-5 py-4 text-sm text-[#554b45]">{{ optional(optional($p->case)->client)->full_name ?: 'No client linked' }}</td>
                         <td class="px-5 py-4 text-sm text-[#554b45]">{{ $p->opposing_counsel_name ?: 'Not recorded' }}</td>
                         <td class="px-5 py-4 text-sm text-[#554b45]"><p>{{ $p->email ?: 'No email recorded' }}</p><p class="mt-1">{{ $p->contact_number ?: 'No contact number' }}</p></td>
-                        <td class="px-5 py-4 text-right"><a href="{{ route('opposing-parties.show', $p->id) }}" class="text-sm font-bold text-[#9f7957] hover:text-[#030203]">Manage</a></td>
+                        <td class="px-5 py-4 text-right"><a href="{{ route('opposing-parties.show', $p->id) }}" class="text-sm font-bold text-[#9f7957] hover:text-[#030203]">{{ Auth::user()?->isLawyer() ? 'View' : 'Manage' }}</a></td>
                     </tr>
                 @empty
                     <tr><td colspan="6" class="px-5 py-12 text-center"><p class="font-bold text-[#030203]">No opposing parties yet</p><p class="mt-2 text-sm text-[#554b45]">Add the opposing party after opening a case file.</p></td></tr>

@@ -58,7 +58,7 @@
                                     </div>
                                     <p class="text-sm font-semibold text-[#554b45]">{{ $case->case_status ?: 'No status' }}</p>
                                 </div>
-                                <p class="mt-2 text-sm text-[#7a716b]">{{ $case->case_type ?: 'No type' }} / {{ optional($case->assignedLawyer)->full_name ?: 'No lawyer assigned' }}</p>
+                                <p class="mt-2 text-sm text-[#7a716b]">{{ $case->case_type ?: 'No type' }} / {{ $case->assignedLawyer?->display_name ?: 'No lawyer assigned' }}</p>
                             </div>
                         @empty
                             <div class="px-5 py-8 text-center text-sm text-[#554b45]">No cases linked to this client yet.</div>
@@ -108,7 +108,7 @@
                                         <td class="px-5 py-4 text-sm font-semibold text-[#030203]">{{ number_format($billing->total_amount, 2) }}</td>
                                         <td class="px-5 py-4 text-sm font-semibold text-[#030203]">{{ number_format($billing->amount_paid, 2) }}</td>
                                         <td class="px-5 py-4 text-sm font-semibold {{ $billing->balance > 0 ? 'text-red-700' : 'text-emerald-700' }}">{{ number_format($billing->balance, 2) }}</td>
-                                        <td class="px-5 py-4 text-right"><a href="{{ route('billings.show', $billing->id) }}" class="text-sm font-bold text-[#9f7957] hover:text-[#030203]">Manage</a></td>
+                                        <td class="px-5 py-4 text-right"><a href="{{ route('billings.show', $billing->id) }}" class="text-sm font-bold text-[#9f7957] hover:text-[#030203]">{{ Auth::user()?->isLawyer() ? 'View' : 'Manage' }}</a></td>
                                     </tr>
                                 @empty
                                     <tr><td colspan="5" class="px-5 py-8 text-center text-sm text-[#554b45]">No billings recorded.</td></tr>

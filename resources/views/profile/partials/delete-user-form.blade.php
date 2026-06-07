@@ -9,11 +9,18 @@
         </p>
     </header>
 
-    <x-danger-button
-        x-data=""
-        x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
-    >{{ __('Delete Account') }}</x-danger-button>
+    @if($canDeleteAccount)
+        <x-danger-button
+            x-data=""
+            x-on:click.prevent="$dispatch('open-modal', 'confirm-user-deletion')"
+        >{{ __('Delete Account') }}</x-danger-button>
+    @else
+        <p class="bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-900">
+            {{ $deleteAccountMessage }}
+        </p>
+    @endif
 
+    @if($canDeleteAccount)
     <x-modal name="confirm-user-deletion" :show="$errors->userDeletion->isNotEmpty()" focusable>
         <form method="post" action="{{ route('profile.destroy') }}" class="p-6">
             @csrf
@@ -52,4 +59,5 @@
             </div>
         </form>
     </x-modal>
+    @endif
 </section>

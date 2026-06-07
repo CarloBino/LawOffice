@@ -30,7 +30,7 @@
                             @forelse($lawyers as $lawyer)
                                 <tr class="transition hover:bg-[#f8f8f6]">
                                     <td class="px-5 py-4">
-                                        <a href="{{ route('lawyers.show', $lawyer->id) }}" class="font-bold text-[#030203] hover:text-[#9f7957]">{{ $lawyer->full_name }}</a>
+                                        <a href="{{ route('lawyers.show', $lawyer->id) }}" class="font-bold text-[#030203] hover:text-[#9f7957]">{{ $lawyer->display_name }}</a>
                                         <p class="mt-1 text-sm text-[#554b45]">{{ $lawyer->email ?: 'No email recorded' }}</p>
                                     </td>
                                     <td class="px-5 py-4 text-sm text-[#554b45]">{{ $lawyer->contact_number ?: 'No contact number' }}</td>

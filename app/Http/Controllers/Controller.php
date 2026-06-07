@@ -40,7 +40,13 @@ abstract class Controller
             return null;
         }
 
-        return Lawyer::where('user_id', Auth::id())->value('id');
+        $user = Auth::user();
+
+        return Lawyer::query()
+            ->where('user_id', $user->id)
+            ->orWhere('email', $user->email)
+            ->orWhere('full_name', $user->name)
+            ->value('id');
     }
 
     protected function restrictCasesToCurrentLawyer($query)

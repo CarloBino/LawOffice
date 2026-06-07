@@ -5,7 +5,9 @@
                 <p class="text-sm font-bold uppercase text-[#9f7957]">Court calendar</p>
                 <h2 class="mt-2 text-3xl font-extrabold text-[#030203]">Hearings</h2>
             </div>
-            <a href="{{ route('hearings.create') }}" class="inline-flex items-center justify-center bg-[#030203] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#554b45]">New hearing</a>
+            @unless(Auth::user()?->isLawyer())
+                <a href="{{ route('hearings.create') }}" class="inline-flex items-center justify-center bg-[#030203] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#554b45]">New hearing</a>
+            @endunless
         </div>
     </x-slot>
 
@@ -59,7 +61,7 @@
                         <select name="lawyer_id" onchange="this.form.submit()" class="mt-2 w-full border-[#c1c1bd] bg-white text-sm font-semibold normal-case text-[#030203]">
                             <option value="">All</option>
                             @foreach($lawyers as $lawyer)
-                                <option value="{{ $lawyer->id }}" @selected((string) request('lawyer_id') === (string) $lawyer->id)>{{ $lawyer->full_name }}</option>
+                                <option value="{{ $lawyer->id }}" @selected((string) request('lawyer_id') === (string) $lawyer->id)>{{ $lawyer->display_name }}</option>
                             @endforeach
                         </select>
                     </label>
@@ -108,7 +110,7 @@
                                         <p class="mt-1 text-sm text-[#554b45]">{{ optional($h->case)->case_number ?? 'No case number' }}</p>
                                     </td>
                                     <td class="px-5 py-4 text-sm text-[#554b45]">{{ optional(optional($h->case)->client)->full_name ?? 'No client' }}</td>
-                                    <td class="px-5 py-4 text-sm text-[#554b45]">{{ optional(optional($h->case)->assignedLawyer)->full_name ?? 'No lawyer assigned' }}</td>
+                                    <td class="px-5 py-4 text-sm text-[#554b45]">{{ optional($h->case?->assignedLawyer)->display_name ?? 'No lawyer assigned' }}</td>
                                     <td class="px-5 py-4 text-sm text-[#554b45]">{{ $h->court_venue ?: 'Venue pending' }}{{ $h->court_branch ? ', '.$h->court_branch : '' }}</td>
                                     <td class="px-5 py-4"><span class="bg-[#eef0ec] px-3 py-1 text-xs font-bold text-[#554b45]">{{ $h->hearing_status ?: 'Scheduled' }}</span></td>
                                     <td class="px-5 py-4 text-right"><a href="{{ route('hearings.show', $h->id) }}" class="text-sm font-bold text-[#9f7957] hover:text-[#030203]">Open</a></td>

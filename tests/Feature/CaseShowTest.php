@@ -40,9 +40,24 @@ class CaseShowTest extends TestCase
 
         $response->assertOk();
         $response->assertSee('Test Matter');
-        $response->assertSee('Billings for this case');
-        $response->assertSee('These amounts belong only to CV-001.');
-        $response->assertSee('Add new billing from the client profile or Billings page.');
+        $response->assertSee('Financial summary');
+        $response->assertSee('Totals are calculated from billing records for CV-001.');
+        $response->assertSee('Total Billed');
+        $response->assertSee('Total Paid');
+        $response->assertSee('Outstanding Balance');
         $response->assertSee('4,000.00');
+    }
+
+    public function test_case_form_uses_controlled_case_type_dropdown(): void
+    {
+        $user = User::factory()->create(['role' => 'staff']);
+
+        $this->actingAs($user)
+            ->get(route('cases.create'))
+            ->assertOk()
+            ->assertSee('Select type')
+            ->assertSee('Civil')
+            ->assertSee('Criminal')
+            ->assertSee('Collection');
     }
 }

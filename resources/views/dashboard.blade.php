@@ -37,12 +37,12 @@
                         <p class="mt-2 text-3xl font-extrabold {{ $stats['unpaidBalance'] > 0 ? 'text-red-700' : 'text-emerald-700' }}">{{ number_format($stats['unpaidBalance'], 2) }}</p>
                     </a>
                 @endunless
-                @unless($isLawyer)
+                @if($isAdmin)
                     <a href="{{ route('office-expenses.index') }}" class="bg-white p-5 shadow-sm transition hover:bg-[#f8f8f6]">
                         <p class="text-xs font-bold uppercase text-[#9f7957]">Office unpaid</p>
                         <p class="mt-2 text-3xl font-extrabold {{ $stats['officeExpensesUnpaid'] > 0 ? 'text-red-700' : 'text-emerald-700' }}">{{ number_format($stats['officeExpensesUnpaid'], 2) }}</p>
                     </a>
-                @endunless
+                @endif
                 <a href="{{ route('documents.index') }}" class="bg-white p-5 shadow-sm transition hover:bg-[#f8f8f6]">
                     <p class="text-xs font-bold uppercase text-[#9f7957]">{{ $isLawyer ? 'My documents' : 'Documents' }}</p>
                     <p class="mt-2 text-3xl font-extrabold text-[#030203]">{{ number_format($stats['documents']) }}</p>
@@ -82,7 +82,9 @@
                             <h3 class="font-bold text-[#030203]">{{ $isLawyer ? 'My next hearings' : 'Next hearings' }}</h3>
                             <p class="text-sm text-[#554b45]">{{ $isLawyer ? 'Court dates for assigned cases' : 'Court dates coming up' }}</p>
                         </div>
-                        <a href="{{ route('hearings.create') }}" class="text-sm font-bold text-[#9f7957] hover:text-[#030203]">Add</a>
+                        @unless($isLawyer)
+                            <a href="{{ route('hearings.create') }}" class="text-sm font-bold text-[#9f7957] hover:text-[#030203]">Add</a>
+                        @endunless
                     </div>
                     <div class="divide-y divide-[#e3e3df]">
                         @forelse ($upcomingHearings as $hearing)
@@ -106,7 +108,7 @@
             </section>
 
             @unless($isLawyer)
-            <section class="grid gap-6 lg:grid-cols-2">
+            <section class="grid gap-6 {{ $isAdmin ? 'lg:grid-cols-2' : '' }}">
                 <div class="bg-white shadow-sm">
                     <div class="flex items-center justify-between border-b border-[#e3e3df] px-5 py-4">
                         <div>
@@ -133,6 +135,7 @@
                     </div>
                 </div>
 
+                    @if($isAdmin)
                     <div class="bg-white shadow-sm">
                         <div class="flex items-center justify-between border-b border-[#e3e3df] px-5 py-4">
                             <div>
@@ -158,6 +161,7 @@
                             @endforelse
                         </div>
                     </div>
+                    @endif
             </section>
             @endunless
 

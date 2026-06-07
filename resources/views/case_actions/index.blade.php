@@ -5,7 +5,9 @@
                 <p class="text-sm font-bold uppercase text-[#9f7957]">Matter tasks</p>
                 <h2 class="mt-2 text-3xl font-extrabold text-[#030203]">Case Actions</h2>
             </div>
-            <a href="{{ route('case-actions.create') }}" class="inline-flex items-center justify-center bg-[#030203] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#554b45]">New action</a>
+            @unless(Auth::user()?->isLawyer())
+                <a href="{{ route('case-actions.create') }}" class="inline-flex items-center justify-center bg-[#030203] px-5 py-3 text-sm font-bold text-white transition hover:bg-[#554b45]">New action</a>
+            @endunless
         </div>
     </x-slot>
 

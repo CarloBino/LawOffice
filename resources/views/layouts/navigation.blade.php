@@ -34,7 +34,7 @@
                         </x-slot>
                     </x-dropdown>
 
-                    @unless(Auth::user()?->isLawyer())
+                    @if(Auth::user()?->isAdmin())
                         <x-dropdown align="left" width="48" contentClasses="py-1 bg-white">
                             <x-slot name="trigger">
                                 <button class="inline-flex h-[72px] items-center border-b-2 px-1 pt-1 text-sm font-bold leading-5 transition duration-150 ease-in-out focus:outline-none {{ request()->routeIs('office-expenses.*') || request()->routeIs('activity-logs.*') || request()->routeIs('staff-users.*') ? 'border-[#c7a47b] text-white' : 'border-transparent text-[#d1d2cd] hover:border-[#9f7957] hover:text-white' }}">
@@ -48,12 +48,10 @@
                             <x-slot name="content">
                                 <x-dropdown-link :href="route('office-expenses.index')">{{ __('Expenses') }}</x-dropdown-link>
                                 <x-dropdown-link :href="route('activity-logs.index')">{{ __('Activity Log') }}</x-dropdown-link>
-                                @if(Auth::user()?->isAdmin())
-                                    <x-dropdown-link :href="route('staff-users.index')">{{ __('Staff Accounts') }}</x-dropdown-link>
-                                @endif
+                                <x-dropdown-link :href="route('staff-users.index')">{{ __('Staff Accounts') }}</x-dropdown-link>
                             </x-slot>
                         </x-dropdown>
-                    @endunless
+                    @endif
                 </div>
             </div>
 
@@ -110,14 +108,12 @@
             <x-responsive-nav-link :href="route('lawyers.index')" :active="request()->routeIs('lawyers.*')">{{ __('Lawyers') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('documents.index')" :active="request()->routeIs('documents.*')">{{ __('Documents') }}</x-responsive-nav-link>
             <x-responsive-nav-link :href="route('opposing-parties.index')" :active="request()->routeIs('opposing-parties.*')">{{ __('Opposing Parties') }}</x-responsive-nav-link>
-            @unless(Auth::user()?->isLawyer())
+            @if(Auth::user()?->isAdmin())
                 <div class="px-4 pb-1 pt-3 text-xs font-bold uppercase text-[#9f7957]">Office</div>
                 <x-responsive-nav-link :href="route('office-expenses.index')" :active="request()->routeIs('office-expenses.*')">{{ __('Expenses') }}</x-responsive-nav-link>
                 <x-responsive-nav-link :href="route('activity-logs.index')" :active="request()->routeIs('activity-logs.*')">{{ __('Activity Log') }}</x-responsive-nav-link>
-                @if(Auth::user()?->isAdmin())
-                    <x-responsive-nav-link :href="route('staff-users.index')" :active="request()->routeIs('staff-users.*')">{{ __('Staff Accounts') }}</x-responsive-nav-link>
-                @endif
-            @endunless
+                <x-responsive-nav-link :href="route('staff-users.index')" :active="request()->routeIs('staff-users.*')">{{ __('Staff Accounts') }}</x-responsive-nav-link>
+            @endif
         </div>
 
         <div class="border-t border-[#554b45] pb-1 pt-4">

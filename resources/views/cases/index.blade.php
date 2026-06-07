@@ -70,7 +70,7 @@
                         <select name="lawyer_id" onchange="this.form.submit()" class="mt-2 w-full border-[#c1c1bd] bg-white text-sm font-semibold normal-case text-[#030203]">
                             <option value="">All</option>
                             @foreach($lawyers as $lawyer)
-                                <option value="{{ $lawyer->id }}" @selected((string) request('lawyer_id') === (string) $lawyer->id)>{{ $lawyer->full_name }}</option>
+                                <option value="{{ $lawyer->id }}" @selected((string) request('lawyer_id') === (string) $lawyer->id)>{{ $lawyer->display_name }}</option>
                             @endforeach
                         </select>
                     </label>
@@ -96,7 +96,7 @@
                                         <p class="mt-1 text-sm text-[#554b45]">{{ $c->case_number }} | {{ $c->case_status }}</p>
                                     </td>
                                     <td class="px-5 py-4 text-sm text-[#554b45]">{{ optional($c->client)->full_name ?? 'Unassigned' }}</td>
-                                    <td class="px-5 py-4 text-sm text-[#554b45]">{{ optional($c->assignedLawyer)->full_name ?? 'Unassigned' }}</td>
+                                    <td class="px-5 py-4 text-sm text-[#554b45]">{{ $c->assignedLawyer?->display_name ?? 'Unassigned' }}</td>
                                     <td class="px-5 py-4">
                                         <span class="px-3 py-1 text-xs font-bold {{ $c->priority_level === 'High' ? 'bg-red-100 text-red-800' : ($c->priority_level === 'Medium' ? 'bg-[#c7a47b] text-[#030203]' : 'bg-[#d1d2cd] text-[#554b45]') }}">{{ $c->priority_level }}</span>
                                     </td>

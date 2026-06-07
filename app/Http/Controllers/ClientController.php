@@ -48,7 +48,7 @@ class ClientController extends Controller
      */
     public function create()
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
         return view('clients.create');
     }
 
@@ -57,7 +57,7 @@ class ClientController extends Controller
      */
     public function store(Request $request)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
 
         $data = $request->validate([
             'full_name' => 'required|string|max:255',
@@ -138,7 +138,7 @@ class ClientController extends Controller
      */
     public function edit(Client $client)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
         return view('clients.edit', compact('client'));
     }
 
@@ -147,7 +147,7 @@ class ClientController extends Controller
      */
     public function update(Request $request, Client $client)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin', 'staff');
 
         $data = $request->validate([
             'full_name' => 'required|string|max:255',

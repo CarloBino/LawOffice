@@ -10,7 +10,7 @@ class OfficeExpenseController extends Controller
 {
     public function index(Request $request)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin');
 
         $expenses = OfficeExpense::orderByRaw("CASE payment_status WHEN 'Unpaid' THEN 1 WHEN 'Partial' THEN 2 ELSE 3 END")
             ->when($request->filled('expense_type'), fn ($query) => $query->where('expense_type', $request->query('expense_type')))
@@ -37,7 +37,7 @@ class OfficeExpenseController extends Controller
 
     public function export(Request $request): StreamedResponse
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin');
 
         $expenses = OfficeExpense::query()
             ->when($request->filled('expense_type'), fn ($query) => $query->where('expense_type', $request->query('expense_type')))
@@ -68,14 +68,14 @@ class OfficeExpenseController extends Controller
 
     public function create()
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin');
 
         return view('office_expenses.create');
     }
 
     public function store(Request $request)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin');
 
         $data = $this->validatedData($request);
         $data = $this->normalizePaymentData($data);
@@ -88,21 +88,21 @@ class OfficeExpenseController extends Controller
 
     public function show(OfficeExpense $officeExpense)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin');
 
         return view('office_expenses.show', ['expense' => $officeExpense]);
     }
 
     public function edit(OfficeExpense $officeExpense)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin');
 
         return view('office_expenses.edit', ['expense' => $officeExpense]);
     }
 
     public function update(Request $request, OfficeExpense $officeExpense)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin');
 
         $data = $this->validatedData($request);
         $data = $this->normalizePaymentData($data);
@@ -115,7 +115,7 @@ class OfficeExpenseController extends Controller
 
     public function togglePaid(OfficeExpense $officeExpense)
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin');
         if ($officeExpense->payment_status === 'Paid') {
             $officeExpense->update([
                 'payment_status' => 'Unpaid',

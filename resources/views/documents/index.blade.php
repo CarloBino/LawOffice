@@ -5,7 +5,9 @@
                 <p class="text-sm font-bold uppercase text-[#9f7957]">File room</p>
                 <h2 class="mt-2 text-3xl font-extrabold text-[#030203]">Documents</h2>
             </div>
-            <a href="{{ route('documents.create') }}" class="inline-flex items-center justify-center bg-[#030203] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#554b45]">New document</a>
+            @unless(Auth::user()?->isLawyer())
+                <a href="{{ route('documents.create') }}" class="inline-flex items-center justify-center bg-[#030203] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#554b45]">New document</a>
+            @endunless
         </div>
     </x-slot>
 
@@ -76,7 +78,7 @@
                                     <td class="px-5 py-4 text-sm text-[#554b45]">{{ $d->created_at ? $d->created_at->format('M d, Y') : 'Not recorded' }}</td>
                                     <td class="px-5 py-4 text-right">
                                         <div class="flex justify-end gap-4">
-                                            @if($d->file_path)<a href="{{ asset('storage/'.$d->file_path) }}" target="_blank" class="text-sm font-bold text-[#554b45] hover:text-[#030203]">Download</a>@endif
+                                            @if($d->file_path)<a href="{{ route('documents.download', $d) }}" class="text-sm font-bold text-[#554b45] hover:text-[#030203]">Download</a>@endif
                                             <a href="{{ route('documents.show', $d->id) }}" class="text-sm font-bold text-[#9f7957] hover:text-[#030203]">Open</a>
                                         </div>
                                     </td>

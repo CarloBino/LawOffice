@@ -13,7 +13,7 @@ class OfficeExpenseTest extends TestCase
 
     public function test_user_can_create_and_view_office_expense(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
 
         $this->actingAs($user)
             ->post(route('office-expenses.store'), [
@@ -43,7 +43,7 @@ class OfficeExpenseTest extends TestCase
 
     public function test_user_can_mark_office_expense_paid_and_unpaid(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['role' => 'admin']);
         $expense = OfficeExpense::create([
             'expense_type' => 'WiFi Fee',
             'amount' => 2000,
@@ -65,5 +65,14 @@ class OfficeExpenseTest extends TestCase
         $expense->refresh();
         $this->assertSame('Unpaid', $expense->payment_status);
         $this->assertNull($expense->payment_date);
+    }
+
+    public function test_staff_cannot_access_office_expenses(): void
+    {
+        $staff = User::factory()->create(['role' => 'staff']);
+
+        $this->actingAs($staff)
+            ->get(route('office-expenses.index'))
+            ->assertForbidden();
     }
 }

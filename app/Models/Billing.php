@@ -10,6 +10,7 @@ class Billing extends Model
 {
     protected $fillable = [
         'case_id',
+        'hearing_id',
         'acceptance_fee',
         'appearance_fee',
         'pleading_fee',
@@ -31,6 +32,11 @@ class Billing extends Model
     public function case(): BelongsTo
     {
         return $this->belongsTo(LegalCase::class, 'case_id');
+    }
+
+    public function hearing(): BelongsTo
+    {
+        return $this->belongsTo(Hearing::class);
     }
 
     public function payments(): HasMany

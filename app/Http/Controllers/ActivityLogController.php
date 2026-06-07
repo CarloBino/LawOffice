@@ -8,7 +8,7 @@ class ActivityLogController extends Controller
 {
     public function index()
     {
-        $this->requireRole('admin', 'staff', 'secretary');
+        $this->requireRole('admin');
 
         $activities = ActivityLog::with('user')
             ->latest()

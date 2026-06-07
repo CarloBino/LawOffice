@@ -13,6 +13,7 @@ use App\Http\Controllers\BillingController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\OpposingPartyController;
 use App\Http\Controllers\OfficeExpenseController;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Models\Billing;
 use App\Models\BillingPayment;
 use App\Models\Client;
@@ -29,22 +30,39 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    $currentLawyerId = Auth::user()?->role === 'lawyer'
-        ? Lawyer::where('user_id', Auth::id())->value('id')
+    $user = Auth::user();
+    $isLawyer = ($user?->role ?: 'staff') === 'lawyer';
+    $isAdmin = $user?->role === 'admin';
+    $currentLawyerId = $isLawyer
+        ? Lawyer::query()
+            ->where('user_id', $user->id)
+            ->orWhere('email', $user->email)
+            ->orWhere('full_name', $user->name)
+            ->value('id')
         : null;
-    $caseScope = fn ($query) => $currentLawyerId ? $query->where('assigned_lawyer_id', $currentLawyerId) : $query;
+    $caseScope = function ($query) use ($isLawyer, $currentLawyerId) {
+        if (! $isLawyer) {
+            return $query;
+        }
+
+        return $currentLawyerId
+            ? $query->where('assigned_lawyer_id', $currentLawyerId)
+            : $query->whereRaw('1 = 0');
+    };
 
     $stats = [
-        'clients' => Client::when($currentLawyerId, fn ($query) => $query->whereHas('cases', $caseScope))->count(),
-        'openCases' => LegalCase::when($currentLawyerId, $caseScope)->whereNotIn('case_status', ['Closed', 'Archived'])->count(),
-        'upcomingHearings' => Hearing::when($currentLawyerId, fn ($query) => $query->whereHas('case', $caseScope))->whereDate('hearing_date', '>=', now()->toDateString())->count(),
-        'unpaidBalance' => Billing::when($currentLawyerId, fn ($query) => $query->whereHas('case', $caseScope))->sum('balance'),
-        'officeExpensesUnpaid' => OfficeExpense::where('payment_status', 'Unpaid')->sum('amount'),
-        'documents' => Document::when($currentLawyerId, fn ($query) => $query->whereHas('case', $caseScope))->count(),
+        'clients' => Client::when($isLawyer, fn ($query) => $query->whereHas('cases', $caseScope))->count(),
+        'openCases' => LegalCase::when($isLawyer, $caseScope)->whereNotIn('case_status', ['Closed', 'Archived'])->count(),
+        'upcomingHearings' => Hearing::when($isLawyer, fn ($query) => $query->whereHas('case', $caseScope))->whereDate('hearing_date', '>=', now()->toDateString())->count(),
+        'unpaidBalance' => Billing::when($isLawyer, fn ($query) => $query->whereHas('case', $caseScope))->sum('balance'),
+        'officeExpensesUnpaid' => $isAdmin
+            ? OfficeExpense::where('payment_status', 'Unpaid')->sum('amount')
+            : 0,
+        'documents' => Document::when($isLawyer, fn ($query) => $query->whereHas('case', $caseScope))->count(),
     ];
 
     $upcomingHearings = Hearing::with('case.client')
-        ->when($currentLawyerId, fn ($query) => $query->whereHas('case', $caseScope))
+        ->when($isLawyer, fn ($query) => $query->whereHas('case', $caseScope))
         ->whereDate('hearing_date', '>=', now()->toDateString())
         ->orderBy('hearing_date')
         ->orderBy('hearing_time')
@@ -52,7 +70,7 @@ Route::get('/dashboard', function () {
         ->get();
 
     $priorityCases = LegalCase::with(['client', 'assignedLawyer'])
-        ->when($currentLawyerId, $caseScope)
+        ->when($isLawyer, $caseScope)
         ->whereNotIn('case_status', ['Closed', 'Archived'])
         ->orderByRaw("CASE priority_level WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 ELSE 3 END")
         ->latest()
@@ -60,22 +78,24 @@ Route::get('/dashboard', function () {
         ->get();
 
     $recentPayments = BillingPayment::with('billing.case.client')
-        ->when($currentLawyerId, fn ($query) => $query->whereHas('billing.case', $caseScope))
+        ->when($isLawyer, fn ($query) => $query->whereHas('billing.case', $caseScope))
         ->latest('date_received')
         ->latest('id')
         ->take(5)
         ->get();
 
-    $unpaidOfficeExpenses = OfficeExpense::where('payment_status', 'Unpaid')
-        ->orderByRaw('due_date IS NULL')
-        ->orderBy('due_date')
-        ->take(5)
-        ->get();
+    $unpaidOfficeExpenses = $isAdmin
+        ? OfficeExpense::where('payment_status', 'Unpaid')
+            ->orderByRaw('due_date IS NULL')
+            ->orderBy('due_date')
+            ->take(5)
+            ->get()
+        : collect();
 
-    return view('dashboard', compact('stats', 'upcomingHearings', 'priorityCases', 'recentPayments', 'unpaidOfficeExpenses'));
-})->middleware(['auth', 'verified'])->name('dashboard');
+    return view('dashboard', compact('stats', 'upcomingHearings', 'priorityCases', 'recentPayments', 'unpaidOfficeExpenses', 'isAdmin'));
+})->middleware(['auth', EnsureUserIsActive::class, 'verified'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', EnsureUserIsActive::class])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -97,12 +117,16 @@ Route::middleware('auth')->group(function () {
     Route::resource('billings', BillingController::class);
     Route::patch('office-expenses/{officeExpense}/toggle-paid', [OfficeExpenseController::class, 'togglePaid'])->name('office-expenses.toggle-paid');
     Route::resource('office-expenses', OfficeExpenseController::class);
+    Route::get('documents/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
     Route::resource('documents', DocumentController::class);
     Route::resource('opposing-parties', OpposingPartyController::class);
     Route::get('activity-log', [ActivityLogController::class, 'index'])->name('activity-logs.index');
     Route::get('staff-users', [StaffUserController::class, 'index'])->name('staff-users.index');
     Route::get('staff-users/create', [StaffUserController::class, 'create'])->name('staff-users.create');
     Route::post('staff-users', [StaffUserController::class, 'store'])->name('staff-users.store');
+    Route::get('staff-users/{staffUser}/edit', [StaffUserController::class, 'edit'])->name('staff-users.edit');
+    Route::patch('staff-users/{staffUser}', [StaffUserController::class, 'update'])->name('staff-users.update');
+    Route::delete('staff-users/{staffUser}', [StaffUserController::class, 'destroy'])->name('staff-users.destroy');
 });
 
 require __DIR__.'/auth.php';
