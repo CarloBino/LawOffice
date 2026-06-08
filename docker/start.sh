@@ -28,7 +28,10 @@ php artisan view:clear
 php artisan migrate --force
 
 if [ -n "${DEPLOY_ADMIN_EMAIL:-}" ] && [ -n "${DEPLOY_ADMIN_PASSWORD:-}" ]; then
-    php artisan admin:ensure
+    php artisan admin:ensure \
+        --email="$DEPLOY_ADMIN_EMAIL" \
+        --password="$DEPLOY_ADMIN_PASSWORD" \
+        --name="${DEPLOY_ADMIN_NAME:-Administrator}"
 fi
 
 php artisan config:cache
