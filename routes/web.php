@@ -26,7 +26,13 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    $publicStats = [
+        'clients' => Client::count(),
+        'activeCases' => LegalCase::whereNotIn('case_status', ['Closed', 'Archived'])->count(),
+        'documents' => Document::count(),
+    ];
+
+    return view('welcome', compact('publicStats'));
 });
 
 Route::get('/dashboard', function () {

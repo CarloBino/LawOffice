@@ -71,15 +71,15 @@
                 <section class="relative bg-[#d1d2cd] px-5 py-12 sm:px-8">
                     <div class="mx-auto grid max-w-7xl gap-4 sm:grid-cols-3">
                         <div class="border border-[#9f7957]/35 bg-[#030203] p-6 text-white">
-                            <p class="text-4xl font-extrabold">124</p>
+                            <p class="text-4xl font-extrabold">{{ number_format($publicStats['clients']) }}</p>
                             <p class="mt-2 text-sm font-semibold uppercase text-[#c7a47b]">Client records</p>
                         </div>
                         <div class="border border-[#9f7957]/35 bg-[#554b45] p-6 text-white">
-                            <p class="text-4xl font-extrabold">37</p>
+                            <p class="text-4xl font-extrabold">{{ number_format($publicStats['activeCases']) }}</p>
                             <p class="mt-2 text-sm font-semibold uppercase text-[#d1d2cd]">Active matters</p>
                         </div>
                         <div class="border border-[#9f7957]/35 bg-white p-6 text-[#030203]">
-                            <p class="text-4xl font-extrabold">214</p>
+                            <p class="text-4xl font-extrabold">{{ number_format($publicStats['documents']) }}</p>
                             <p class="mt-2 text-sm font-semibold uppercase text-[#9f7957]">Filed documents</p>
                         </div>
                     </div>
