@@ -41,6 +41,41 @@ php artisan serve
 php artisan test
 ```
 
+### Deployment: Render + Supabase
+
+This project is prepared for Docker deployment on Render with Supabase PostgreSQL and Supabase Storage.
+
+1. Push the repository to GitHub.
+2. Create a Supabase project.
+3. In Supabase, create a private storage bucket such as `law-office-documents`.
+4. Enable the Supabase Storage S3 protocol and create S3 access keys.
+5. In Render, create a new Blueprint or Docker Web Service from this repository.
+6. Set these required Render environment variables:
+
+```text
+APP_ENV=production
+APP_DEBUG=false
+DB_CONNECTION=pgsql
+DB_URL=<Supabase pooled or direct PostgreSQL connection string>
+DB_SSLMODE=require
+LOG_CHANNEL=stderr
+FILESYSTEM_DISK=s3
+AWS_ACCESS_KEY_ID=<Supabase S3 access key>
+AWS_SECRET_ACCESS_KEY=<Supabase S3 secret key>
+AWS_DEFAULT_REGION=<Supabase project region>
+AWS_BUCKET=law-office-documents
+AWS_ENDPOINT=https://<project-ref>.supabase.co/storage/v1/s3
+AWS_USE_PATH_STYLE_ENDPOINT=true
+```
+
+Render can generate `APP_KEY` from `render.yaml`, or you can create one locally:
+
+```bash
+php artisan key:generate --show
+```
+
+The Docker startup script runs Laravel migrations automatically with `php artisan migrate --force`.
+
 <!-- Original Laravel documentation follows. -->
 
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
