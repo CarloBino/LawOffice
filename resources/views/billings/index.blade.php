@@ -92,7 +92,7 @@
                                 <th class="px-5 py-4">Case</th>
                                 <th class="px-5 py-4">Client</th>
                                 <th class="px-5 py-4">Hearing</th>
-                                <th class="px-5 py-4">Last Payment</th>
+                                <th class="px-5 py-4">Latest Date Received</th>
                                 <th class="px-5 py-4">Total</th>
                                 <th class="px-5 py-4">Paid</th>
                                 <th class="px-5 py-4">Balance</th>
@@ -116,7 +116,7 @@
                                             Case billing
                                         @endif
                                     </td>
-                                    <td class="px-5 py-4 text-sm text-[#554b45]">{{ $b->payment_date ? \Illuminate\Support\Carbon::parse($b->payment_date)->format('M d, Y') : 'No payment yet' }}</td>
+                                    <td class="px-5 py-4 text-sm text-[#554b45]">{{ $b->payment_date ? \Illuminate\Support\Carbon::parse($b->payment_date)->format('M d, Y') : 'No payment received' }}</td>
                                     <td class="px-5 py-4 text-sm font-bold text-[#030203]">{{ number_format($b->total_amount, 2) }}</td>
                                     <td class="px-5 py-4 text-sm text-[#554b45]">{{ number_format($b->amount_paid, 2) }}</td>
                                     <td class="px-5 py-4 text-sm font-bold {{ $b->balance > 0 ? 'text-red-700' : 'text-emerald-700' }}">{{ number_format($b->balance, 2) }}</td>
