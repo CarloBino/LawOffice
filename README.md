@@ -66,6 +66,9 @@ AWS_DEFAULT_REGION=<Supabase project region>
 AWS_BUCKET=law-office-documents
 AWS_ENDPOINT=https://<project-ref>.supabase.co/storage/v1/s3
 AWS_USE_PATH_STYLE_ENDPOINT=true
+DEPLOY_ADMIN_EMAIL=<initial administrator email>
+DEPLOY_ADMIN_PASSWORD=<initial administrator password>
+DEPLOY_ADMIN_NAME=Administrator
 ```
 
 Render can generate `APP_KEY` from `render.yaml`, or you can create one locally:
