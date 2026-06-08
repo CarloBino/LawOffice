@@ -47,7 +47,7 @@ This project is prepared for Docker deployment on Render with Supabase PostgreSQ
 
 1. Push the repository to GitHub.
 2. Create a Supabase project.
-3. In Supabase, create a private storage bucket such as `law-office-documents`.
+3. In Supabase, create a private storage bucket such as `law-office-document`.
 4. Enable the Supabase Storage S3 protocol and create S3 access keys.
 5. In Render, create a new Blueprint or Docker Web Service from this repository.
 6. Set these required Render environment variables:
@@ -63,7 +63,7 @@ FILESYSTEM_DISK=s3
 AWS_ACCESS_KEY_ID=<Supabase S3 access key>
 AWS_SECRET_ACCESS_KEY=<Supabase S3 secret key>
 AWS_DEFAULT_REGION=<Supabase project region>
-AWS_BUCKET=law-office-documents
+AWS_BUCKET=law-office-document
 AWS_ENDPOINT=https://<project-ref>.supabase.co/storage/v1/s3
 AWS_USE_PATH_STYLE_ENDPOINT=true
 ```
